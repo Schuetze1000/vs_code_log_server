@@ -21,8 +21,8 @@
 ## Requirements
 
 To use this extension:
-1. Ensure your React Native app can send logs via HTTP.
-   - Logs should be sent as a POST request to `http://localhost:19000/logs`.
+1. Ensure your app can send logs as structured JSON payloads via HTTP POST requests.
+   - Logs should be sent as a POST request to `http://<server_ip/localhost>:19000/logs`.
 2. The log payload format must include:
    ```json
    {
@@ -33,6 +33,8 @@ To use this extension:
        "timestamp": "2023-01-01T12:00:00.000Z"
    }
    ```
+
+Note: To check if the server is running send a GET request to `http://<server_ip/localhost:19000/ping`.
 
 ---
 
@@ -50,7 +52,7 @@ None
 
 ## Release Notes
 
-### 1.0.0
+### 0.0.1
 
 - Initial release of `log-server`.
 - Features:
@@ -58,12 +60,9 @@ None
   - Display logs in a Webview with device filtering and autoscroll.
   - Status bar integration for quick device selection.
 
----
+### 0.0.2
 
-## Icon Usage
-
-This extension uses the following icon:
-
-![Icon](https://img.freepik.com/free-icon/log_318-17669676.jpg)
-
-Icon source: [Freepik](https://www.freepik.com/icon/log_17669676#fromView=keyword&page=1&position=0&uuid=c0c044aa-5c3d-4c12-bae0-2cfd224e438b)
+- Enhancements:
+  - Added more space after the last log entry.
+- Features:
+  - Added to view/title two buttons to start/stop the server and clear the logs.

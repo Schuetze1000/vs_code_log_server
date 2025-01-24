@@ -2,7 +2,7 @@
   "name": "logserver-extension",
   "displayName": "Log Server Extension",
   "description": "An extension to view logs from a custom server.",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "publisher": "Schuetze1000",
   "repository": "https://github.com/Schuetze1000/vs_code_log_server",
   "engines": {
@@ -13,18 +13,44 @@
   ],
   "main": "./dist/extension.js",
   "contributes": {
+    "menus": {
+      "view/title": [
+        {
+          "command": "extension.clearLogs",
+          "when": "view == logpanel-webview",
+          "group": "navigation@2"
+        },
+        {
+          "command": "extension.stopLogServer",
+          "when": "view == logpanel-webview && logServer:isRunning",
+          "group": "navigation@1"
+        },
+        {
+          "command": "extension.startLogServer",
+          "when": "view == logpanel-webview && !logServer:isRunning",
+          "group": "navigation@1"
+        }
+      ]
+    },
     "commands": [
       {
+        "command": "extension.clearLogs",
+        "title": "Clear Logs",
+        "icon": "$(debug-console-clear-all)"
+      },
+      {
         "command": "extension.startLogServer",
-        "title": "LogServer - Start Log Server"
+        "title": "LogServer - Start Log Server",
+        "icon": "$(debug-start)"
+      },
+      {
+        "command": "extension.stopLogServer",
+        "title": "LogServer - Stop Log Server",
+        "icon": "$(debug-stop)"
       },
       {
         "command": "extension.selectDevice",
         "title": "LogServer - Select Device"
-      },
-      {
-        "command": "extension.stopLogServer",
-        "title": "LogServer - Stop Log Server"
       }
     ],
     "viewsContainers": {
@@ -49,7 +75,7 @@
     }
   },
   "activationEvents": [
-      "onView:logpanel-webview"
+    "onView:logpanel-webview"
   ],
   "scripts": {
     "vscode:prepublish": "yarn run package",

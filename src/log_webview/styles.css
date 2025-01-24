@@ -1,0 +1,58 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  color: #d4d4d4;
+  overflow: hidden;
+  height: 100vh;
+}
+#logs-container {
+  height: 100%; /* Takes the entire available height */
+  overflow-y: auto; /* Scrollbar only here */
+  padding: 10px;
+}
+.log {
+  margin-bottom: 10px;
+  padding: 5px;
+  border-left: 4px solid;
+  border-radius: 3px;
+}
+.log.info {
+  border-color: #007acc;
+}
+.log.warn {
+  border-color: #dcdcaa;
+}
+.log.error {
+  border-color: #f44747;
+}
+.time,
+.level {
+  font-weight: bold;
+}
+.message {
+  white-space: pre-wrap; /* Enable word wrap */
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+.button-container {
+  text-align: center;
+  margin-top: 20px;
+}
+.start-button {
+  padding: 10px 20px;
+  background-color: #007acc;
+  color: white;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+}
+.start-button:hover {
+  background-color: #005f9e;
+}
+
+#logs-container::after {
+  content: "";
+  display: block;
+  height: 5px;
+}
