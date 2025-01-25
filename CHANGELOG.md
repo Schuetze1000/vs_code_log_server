@@ -1,7 +1,7 @@
 ## [0.0.1] - 2024-01-24
 
 ### Added
-- Initial release of `log-server`.
+- Initial release of `Log Server`.
 - Ability to start and stop an HTTP log server.
 - Logs displayed in a dedicated Webview with:
   - Word wrapping for long messages.

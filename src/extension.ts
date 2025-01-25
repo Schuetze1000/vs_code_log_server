@@ -8,7 +8,7 @@ export function activate(context: vscode.ExtensionContext) {
   let devices: Set<string> = new Set();
   let selectedDevice: string | null = null;
   let server: http.Server | null = null;
-  const extensionUri = vscode.Uri.joinPath(context.extensionUri, "src");
+  const extensionUri = vscode.Uri.joinPath(context.extensionUri, "data")
   const logServerContext = new LogServerContext();
 
   // Status bar button for device selection
@@ -268,7 +268,6 @@ class LogWebviewProvider implements vscode.WebviewViewProvider {
 
     console.log("stylesUri", stylesUri);
 
-   
     return `<!DOCTYPE html>
         <html lang="en">
             <head>
@@ -278,7 +277,7 @@ class LogWebviewProvider implements vscode.WebviewViewProvider {
             </head>
             <body>
                 ${
-                isRunning
+                  isRunning
                     ? `
                         <div id="logs-container">
                             ${logEntries}
@@ -290,8 +289,7 @@ class LogWebviewProvider implements vscode.WebviewViewProvider {
                 }
                 <script src="${scriptUri}"></script>
             </body>
-        </html>`
-    ;
+        </html>`;
   }
 }
 

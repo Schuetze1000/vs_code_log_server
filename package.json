@@ -1,7 +1,7 @@
 {
   "name": "logserver-extension",
-  "displayName": "Log Server Extension",
-  "description": "An extension to view logs from a custom server.",
+  "displayName": "Log Server",
+  "description": "An extension to provide a log server for logging messages from other applications.",
   "version": "0.0.2",
   "publisher": "Schuetze1000",
   "repository": "https://github.com/Schuetze1000/vs_code_log_server",
