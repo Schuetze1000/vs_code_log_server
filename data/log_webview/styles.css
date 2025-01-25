@@ -1,58 +1,230 @@
+/* FANCY LOG VIEW CSS (ENGLISH VERSION) */
+
 body {
   font-family: Arial, sans-serif;
   margin: 0;
   padding: 0;
   color: #d4d4d4;
-  overflow: hidden;
   height: 100vh;
+  overflow: hidden;
+
+  /* background: linear-gradient(to bottom right, #1e1e1e, #252526); */
+  background: var(--vscode-panel-background) 0%;
 }
+
+/* Logs container */
 #logs-container {
-  height: 100%; /* Takes the entire available height */
-  overflow-y: auto; /* Scrollbar only here */
+  height: 100%;
+  overflow-y: scroll;
+  scrollbar-gutter: stable both-edges;
   padding: 10px;
+  /* Simple fade-in animation */
+  animation: fade-in 0.4s ease-in;
 }
+
+/* Individual log element */
 .log {
   margin-bottom: 10px;
-  padding: 5px;
+  padding: 10px;
   border-left: 4px solid;
   border-radius: 3px;
+  background-color: var(--vscode-editor-background);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  transition: background-color 0.3s ease, transform 0.2s ease,
+    box-shadow 0.2s ease, margin 0.2s ease;
 }
+
+/* Hover effect: slightly smaller scale to reduce layout shift */
+.log:hover {
+  background-color: var(--vscode-sideBar-background);
+  transform: scale(1.01);
+  /* box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4); */
+  /* Minor negative margins to compensate for the scale expansion */
+  margin-left: -2px;
+  margin-right: -2px;
+}
+
+/* Colored left border depending on log level */
 .log.info {
   border-color: #007acc;
 }
+.log.info:hover {
+  box-shadow: 0 0 8px 2px rgba(0, 122, 204, 0.5);
+}
 .log.warn {
-  border-color: #dcdcaa;
+  border-color: #c4c469;
+}
+.log.warn:hover {
+  box-shadow: 0 0 8px 2px rgba(196, 196, 105, 0.5);
 }
 .log.error {
   border-color: #f44747;
 }
+.log.error:hover {
+  box-shadow: 0 0 8px 2px rgba(244, 71, 71, 0.5);
+}
+
+/* Time and level styling */
 .time,
 .level {
   font-weight: bold;
+  font-size: 0.9rem;
+  display: inline-block;
+  margin-right: 6px;
 }
-.message {
-  white-space: pre-wrap; /* Enable word wrap */
-  word-wrap: break-word;
-  overflow-wrap: break-word;
+.time {
+  color: #888;
 }
-.button-container {
-  text-align: center;
-  margin-top: 20px;
-}
-.start-button {
-  padding: 10px 20px;
-  background-color: #007acc;
-  color: white;
-  border: none;
-  border-radius: 3px;
-  cursor: pointer;
-}
-.start-button:hover {
-  background-color: #005f9e;
+.level {
+  text-transform: uppercase;
+  opacity: 0.9;
 }
 
+/* Multi-line log message with wrapping */
+.message {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  margin-top: 4px;
+  line-height: 1.3;
+}
+
+/* Container for the "Start Log Server" button */
+.button-container {
+  text-align: center;
+  margin-top: 40px;
+}
+
+/* Start button */
+.start-button {
+  padding: 12px 24px;
+  background: linear-gradient(
+    90deg,
+    var(--vscode-button-background),
+    var(--vscode-button-secondaryBackground)
+  );
+  color: #ffffff;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background 0.3s ease, transform 0.2s ease;
+}
+
+.start-button:hover {
+  background: linear-gradient(
+    90deg,
+    var(--vscode-button-hoverBackground),
+    var(--vscode-button-secondaryHoverBackground)
+  );
+  transform: translateY(-2px);
+}
+
+.start-button:active {
+  transform: scale(0.98);
+}
+
+/* Prevent extra spacing at the bottom of logs container */
 #logs-container::after {
   content: "";
   display: block;
   height: 5px;
+}
+
+/* Search container (collapsed vs. expanded) */
+#search-container {
+  position: absolute;
+  top: 10px;
+  right: 20px;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  transition: width 0.3s ease;
+}
+
+/* Search icon (round button) */
+.search-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: var(--vscode-editorSuggestWidget-background);
+  border: 2px solid var(--vscode-editorSuggestWidget-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 6px;
+  cursor: pointer;
+  position: relative;
+  transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 4px 8px var(--vscode-widget-shadow); /* Leichter Schatten für Abhebung */
+}
+
+/* Icon im Button */
+.search-icon::before {
+  content: "🔍";
+  font-size: 14px;
+  color: var(--vscode-editorSuggestWidget-foreground); /* Passende Icon-Farbe */
+}
+
+/* Hover-Effekt */
+.search-icon:hover {
+  background-color: var(--vscode-editorSuggestWidget-selectedBackground);
+  transform: scale(1.1);
+  box-shadow: 0 6px 10px var(--vscode-widget-shadow); /* Größerer Schatten beim Hover */
+}
+
+
+/* Collapsed/expanded input field transitions */
+.collapsed #search-input {
+  width: 0;
+  padding: 0;
+  opacity: 0;
+  border: none;
+  pointer-events: none;
+  margin: 0;
+}
+
+.expanded #search-input {
+  width: 180px;
+  padding: 6px 14px;
+  opacity: 1;
+  border: 2px solid var(--vscode-panelInput-border);
+}
+
+/* Search input field */
+#search-input {
+  background-color: var(--vscode-panel-background);
+  color: #c5c5c5;
+  font-size: 14px;
+  border: 2px solid var(--vscode-panelInput-border);
+  border-radius: 25px;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2), 0 2px 5px rgba(0, 0, 0, 0.3);
+  transition: width 0.3s ease, padding 0.3s ease, opacity 0.2s ease;
+}
+
+/* Placeholder styling */
+#search-input::placeholder {
+  color: #8c8c8c;
+}
+
+#search-input:focus {
+  outline: 2px solid var(--vscode-focusBorder, #ffffff);
+}
+
+/* Highlight when filtered */
+#search-container.filtered .search-icon {
+  border: 2px solid #a72828c1;
+  box-shadow: 0 0 8px 2px rgba(167, 40, 40, 0.5);
+}
+
+/* Fade-in animation keyframes */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

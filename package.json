@@ -2,7 +2,7 @@
   "name": "logserver-extension",
   "displayName": "Log Server",
   "description": "An extension to provide a log server for logging messages from other applications.",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "publisher": "Schuetze1000",
   "repository": "https://github.com/Schuetze1000/vs_code_log_server",
   "engines": {
@@ -17,7 +17,12 @@
       "view/title": [
         {
           "command": "extension.clearLogs",
-          "when": "view == logpanel-webview",
+          "when": "view == logpanel-webview && logServer:isRunning",
+          "group": "navigation@3"
+        },
+        {
+          "command": "extension.copyLogs",
+          "when": "view == logpanel-webview && logServer:isRunning",
           "group": "navigation@2"
         },
         {
@@ -35,13 +40,18 @@
     "commands": [
       {
         "command": "extension.clearLogs",
-        "title": "Clear Logs",
+        "title": "LogServer - Clear Logs",
         "icon": "$(debug-console-clear-all)"
       },
       {
         "command": "extension.startLogServer",
         "title": "LogServer - Start Log Server",
         "icon": "$(debug-start)"
+      },
+      {
+        "command": "extension.copyLogs",
+        "title": "LogServer - Copy Logs",
+        "icon": "$(copy)"
       },
       {
         "command": "extension.stopLogServer",

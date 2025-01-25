@@ -3,13 +3,32 @@ import * as http from "http";
 
 import { LogServerContext } from "./context";
 
+function escapeHtml(input: string): string {
+  return input
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function unescapeHtml(input: string): string {
+  return input
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'");
+}
+
 export function activate(context: vscode.ExtensionContext) {
   let logs: LogPayload[] = [];
   let devices: Set<string> = new Set();
   let selectedDevice: string | null = null;
   let server: http.Server | null = null;
-  const extensionUri = vscode.Uri.joinPath(context.extensionUri, "data")
+  const extensionUri = vscode.Uri.joinPath(context.extensionUri, "data");
   const logServerContext = new LogServerContext();
+  const maxPortRetries = 10;
 
   // Status bar button for device selection
   const deviceSelector = vscode.window.createStatusBarItem(
@@ -46,7 +65,7 @@ export function activate(context: vscode.ExtensionContext) {
           title: "Starting Log Server...",
           cancellable: false,
         },
-        async (progress) => {
+        async () => {
           return new Promise<void>((resolve, reject) => {
             try {
               // Create HTTP server
@@ -58,8 +77,14 @@ export function activate(context: vscode.ExtensionContext) {
                     try {
                       const log: LogPayload = JSON.parse(body);
 
-                      if (!log.timestamp) {
-                        log.timestamp = new Date().toISOString();
+                      if (
+                        log.level !== "Info" &&
+                        log.level !== "Warn" &&
+                        log.level !== "Error"
+                      ) {
+                        throw new Error(
+                          "Invalid log level. Must be Info, Warn, or Error."
+                        );
                       }
 
                       if (
@@ -73,9 +98,16 @@ export function activate(context: vscode.ExtensionContext) {
                         );
                       }
 
+                      // Escape HTML and format the timestamp
+                      log.message = escapeHtml(log.message);
+                      log.timestamp = formatTime(
+                        log.timestamp ? new Date(log.timestamp) : new Date()
+                      );
+
+                      // Save the log to the global array, add the platform-device and update the Webview
                       logs.push(log);
                       devices.add(`${log.platform} - ${log.device_name}`);
-                      provider.refresh(); // Refresh the Webview
+                      provider.addLog(log);
                       res.writeHead(200, {
                         "Content-Type": "application/json",
                       });
@@ -93,16 +125,49 @@ export function activate(context: vscode.ExtensionContext) {
                 } else {
                   res.writeHead(404, { "Content-Type": "text/plain" });
                   res.end("Not Found");
-                }
-              });
+                } // End of server request handling
+              }); // End of server creation
 
-              // Start the server
-              server.listen(19000, () => {
+              let currentPort = 19000;
+              let retryCount = 0;
+
+              function logServerStarted() {
                 logServerContext.isServerRunning = true;
                 deviceSelector.show(); // Make the status bar button visible
                 provider.refresh(); // Refresh the Webview
                 resolve();
-              });
+              }
+
+              server.on("error", (err: NodeJS.ErrnoException) => {
+                if (err.code === "EADDRINUSE") {
+                  retryCount++;
+                  if (retryCount > maxPortRetries) {
+                    vscode.window.showErrorMessage(
+                      `Failed to start the server after ${maxPortRetries} attempts. All ports are in use.`
+                    );
+                    reject(err);
+                    return;
+                  }
+
+                  vscode.window.showWarningMessage(
+                    `Port ${currentPort} is in use. Trying port ${
+                      currentPort + 1
+                    }...`
+                  );
+
+                  // Inkrementiere den Port und versuche es erneut
+                  currentPort++;
+                  server?.listen(currentPort, () => logServerStarted());
+                } else {
+                  vscode.window.showErrorMessage(
+                    `Server error: ${err.message}`
+                  );
+                  reject(err);
+                }
+              }); // End of server error handling
+
+              // Start the server
+              server.listen(19000, () => logServerStarted());
 
               context.subscriptions.push({
                 dispose: () => {
@@ -119,12 +184,12 @@ export function activate(context: vscode.ExtensionContext) {
             } catch (error) {
               vscode.window.showErrorMessage("Failed to start Log Server.");
               reject(error); // Error during startup
-            }
-          });
-        }
-      );
-    }
-  );
+            } // End of try-catching server startup
+          }); // End of Promise
+        } // End of Progress
+      ); // End of withProgress
+    } // End of startLogServerCommand
+  ); // End of registerCommand
 
   // Command: Stop Log Server
   const stopLogServerCommand = vscode.commands.registerCommand(
@@ -143,6 +208,9 @@ export function activate(context: vscode.ExtensionContext) {
       logs.splice(0, logs.length);
       devices.clear();
 
+      // Clear the webview
+      provider.clear();
+
       provider.refresh(); // Refresh the Webview
     }
   );
@@ -151,8 +219,20 @@ export function activate(context: vscode.ExtensionContext) {
   const clearLogsCommand = vscode.commands.registerCommand(
     "extension.clearLogs",
     async () => {
-      logs.splice(0, logs.length);
-      provider.refresh(); // Refresh the Webview
+      // If device is selected, only clear logs of that device
+      if (selectedDevice) {
+        for (let i = logs.length - 1; i >= 0; i--) {
+          if (`${logs[i].platform} - ${logs[i].device_name}` === selectedDevice) {
+            logs[i] = logs[logs.length - 1];
+            logs.pop();
+          }
+        }
+        devices.delete(selectedDevice);
+      } else {
+        logs.splice(0, logs.length);
+      }
+      provider.clearLogs();
+      provider.refreshLogs();
     }
   );
 
@@ -177,7 +257,8 @@ export function activate(context: vscode.ExtensionContext) {
       if (selection !== undefined) {
         selectedDevice = selection === "None" ? null : selection;
         deviceSelector.text = `Log-Device: ${selection}`;
-        provider.refresh(); // Refresh the Webview
+        provider.clearLogs();
+        provider.refreshLogs();
       }
     }
   );
@@ -186,6 +267,43 @@ export function activate(context: vscode.ExtensionContext) {
     startLogServerCommand,
     selectDeviceCommand,
     deviceSelector
+  );
+
+  // Command: Copy Logs
+  const copyLogsCommand = vscode.commands.registerCommand(
+    "extension.copyLogs",
+    async () => {
+      // Copy only the Logs of the selected device as json
+      const filteredLogs = selectedDevice
+        ? logs.filter(
+            (log) => `${log.platform} - ${log.device_name}` === selectedDevice
+          )
+        : logs;
+
+      // Convert the logs to JSON and copy to clipboard
+      const logsJson = JSON.stringify(
+        filteredLogs,
+        (key, value) => {
+          if (typeof value === "string") {
+            return unescapeHtml(value);
+          }
+          return value;
+        },
+        2
+      );
+      await vscode.env.clipboard.writeText(logsJson);
+      await vscode.window.withProgress(
+        {
+          location: vscode.ProgressLocation.Notification,
+          title: "Logs copied to clipboard",
+          cancellable: false, 
+        },
+        async (progress) => {
+          progress.report({ increment: 100 });
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+        }
+      );
+    }
   );
 }
 
@@ -221,35 +339,62 @@ class LogWebviewProvider implements vscode.WebviewViewProvider {
         vscode.commands.executeCommand("extension.startLogServer");
       }
     });
+
+    webviewView.webview.onDidReceiveMessage((message) => {
+      if (message.command === "requestLogs") {
+        const filteredLogs = this.getFiltredLogs();
+        webviewView.webview.postMessage({
+          command: "initLogs",
+          logs: filteredLogs,
+        });
+      } else if (message.command === "openDeviceSelector") {
+        vscode.commands.executeCommand("extension.selectDevice");
+      }
+
+    });
   }
 
-  refresh(): void {
-    if (this._view) {
-      // Set new HTML each time (including autoscroll logic)
-      this._view.webview.html = this.getHtmlContent();
-    }
-  }
-
-  private getHtmlContent(): string {
-    const isRunning = this.isServerRunning();
+  getFiltredLogs(): LogPayload[] {
     const selectedDevice = this.getSelectedDevice();
-    const filteredLogs = selectedDevice
+    return selectedDevice
       ? this.logs.filter(
           (log) => `${log.platform} - ${log.device_name}` === selectedDevice
         )
       : this.logs;
+  }
 
-    // Generate logs as HTML
-    const logEntries = filteredLogs
-      .map(
-        (log) => `
-            <div class="log ${log.level.toLowerCase()}">
-                <div class="time">[${formatTime(new Date(log.timestamp))}]</div>
-                <div class="level">[${log.level.toUpperCase()}]</div>
-                <div class="message">${log.message.replace(/\n/g, "<br>")}</div>
-            </div>`
-      )
-      .join("\n");
+  refresh(): void {
+    if (this._view) {
+      // Set new HTML each time
+      this._view.webview.html = this.getHtmlContent();
+    }
+  }
+
+  addLog(log: LogPayload): void {
+    this._view?.webview.postMessage({
+      command: "addLogs",
+      logs: [log],
+    });
+  }
+
+  refreshLogs(): void {
+    const filteredLogs = this.getFiltredLogs();
+    this._view?.webview.postMessage({
+      command: "addLogs",
+      logs: filteredLogs,
+    });
+  }
+
+  clearLogs(): void {
+    this._view?.webview.postMessage({ command: "clearLogs" });
+  }
+
+  clear(): void {
+    this._view?.webview.postMessage({ command: "clear" });
+  }
+
+  private getHtmlContent(): string {
+    const isRunning = this.isServerRunning();
 
     // Resolve paths to external files
     const onDiskStylesPath = vscode.Uri.joinPath(
@@ -266,8 +411,6 @@ class LogWebviewProvider implements vscode.WebviewViewProvider {
     const stylesUri = this._view?.webview.asWebviewUri(onDiskStylesPath);
     const scriptUri = this._view?.webview.asWebviewUri(onDiskScriptPath);
 
-    console.log("stylesUri", stylesUri);
-
     return `<!DOCTYPE html>
         <html lang="en">
             <head>
@@ -279,9 +422,11 @@ class LogWebviewProvider implements vscode.WebviewViewProvider {
                 ${
                   isRunning
                     ? `
-                        <div id="logs-container">
-                            ${logEntries}
-                        </div>`
+                      <div id="logs-container">
+                        
+                       
+                      </div>
+                        `
                     : `
                         <div class="button-container">
                             <button class="start-button" onclick="startLogServer()">🚀 Start Log Server</button>
