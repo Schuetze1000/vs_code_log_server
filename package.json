@@ -5,10 +5,12 @@
   "version": "0.0.3",
   "publisher": "Schuetze1000",
   "repository": "https://github.com/Schuetze1000/vs_code_log_server",
+  "icon": "images/icon.png",
   "engines": {
     "vscode": "^1.96.0"
   },
   "categories": [
+    "Debuggers",
     "Other"
   ],
   "main": "./dist/extension.js",
@@ -100,17 +102,17 @@
   },
   "devDependencies": {
     "@types/mocha": "^10.0.10",
-    "@types/node": "20.x",
+    "@types/node": "24.3.0",
     "@types/vscode": "^1.96.0",
     "@typescript-eslint/eslint-plugin": "^8.17.0",
     "@typescript-eslint/parser": "^8.17.0",
-    "@vscode/test-cli": "^0.0.10",
+    "@vscode/test-cli": "^0.0.11",
     "@vscode/test-electron": "^2.4.1",
     "eslint": "^9.16.0",
     "ts-loader": "^9.5.1",
     "typescript": "^5.7.2",
     "webpack": "^5.95.0",
-    "webpack-cli": "^5.1.4"
+    "webpack-cli": "^6.0.1"
   },
   "dependencies": {
     "@vscode/vsce": "^3.2.1"
